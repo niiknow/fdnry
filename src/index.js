@@ -15,4 +15,7 @@ $("script[src*='/fdn.']").each((i, e) => {
   });
 });
 
+$(() => {
+  fdn.init();
+});
 export default fdn;
