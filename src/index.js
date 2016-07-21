@@ -1,69 +1,18 @@
 import $ from 'jquery';
-import Util from './util';
+import Feedinary from './feedinary';
 
-export default class Feedinary {
-  constructor(clientId, theme, apiUrl) {
-    this._clientId = clientId;
-    this._theme = theme;
-    this._apiUrl = apiUrl || 'http://localhost:3000/api/';
-  }
+let fdn = new Feedinary();
 
-  getContent(opts) {
-    opts.url = opts.url || this._apiUrl;
-    opts.data.client = this._clientId;
-    opts.data.type = 'content';
-    if (this._theme) {
-      opts.data.theme = opts.data.theme || this._theme;
+$("script[src*='/fdn.']").each((i, e) => {
+  let data = $(e).data();
+
+  $.each(data, (k, v) => {
+    if (['client', 'theme', 'name', 'url'].indexOf(k) > 0) {
+      if (typeof (v) === 'string') {
+        fdn.opts[k] = v;
+      }
     }
+  });
+});
 
-    let ut = new Util();
-
-    return ut.request(opts);
-  }
-
-  renderContent(name, title, content) {
-    let cancel = false;
-
-    if (this.onBeforeRender) {
-      cancel = this.onBeforeRender(name, title, content);
-    }
-
-    if (!cancel) {
-      content = content || (this.cache || {})[title];
-      $(`[data-df-name='${name}'][data-fd-title='${title}']`).html('').html(content || '');
-    }
-
-    // trigger on after render
-    if (this.onAfterRender) {
-      this.onAfterRender(name, title, content);
-    }
-  }
-
-  render(name, title) {
-    let $that = this;
-
-    if (!this.cache) {
-      this.getContent({
-        data: { name: name }
-      }).then((data) => {
-        if (typeof (data) === 'undefined') {
-          // do nothing
-          $that.cache = {};
-        } else if (typeof (data) === 'string' && data.indexOf('{') > 0) {
-          $that.cache = JSON.parse(data);
-        } else {
-          $that.cache = data;
-        }
-        if (title) {
-          $that.renderContent(name, title);
-        } else {
-          // loop through and render content
-          for (let k in $that.cache) {
-            $that.renderContent(name, k);
-          }
-        }
-      });
-    }
-  }
-}
-
+export default fdn;

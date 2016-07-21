@@ -1,13 +1,8 @@
 {
-  "name": "fdnry",
-  "version": "0.0.1",
+  "name": "fdn",
+  "version": "0.0.2",
   "description": "Feedinary client-side code",
-  "main": "lib/library.js",
-  "scripts": {
-    "build": "webpack --mode=build",
-    "dev": "webpack --progress --colors --watch --mode=dev",
-    "test": "mocha --compilers js:babel-core/register --colors -w ./test/*.spec.js"
-  },
+  "main": "lib/fdn.js",
   "devDependencies": {
     "babel": "6.3.13",
     "babel-core": "6.1.18",
@@ -25,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niiknow/fdnry.git"
+    "url": "https://github.com/niiknow/fdn.git"
   },
   "keywords": [
     "webpack",
@@ -39,7 +34,12 @@
   "author": "Tom Nguyen",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/niiknow/fdnry/issues"
+    "url": "https://github.com/niiknow/fdn/issues"
   },
-  "homepage": "https://github.com/niiknow/fdnry"
+  "homepage": "https://github.com/niiknow/fdn",
+  "scripts": {
+    "build": "./node_modules/.bin/webpack --mode=build",
+    "dev": "./node_modules/.bin/webpack --progress --colors --watch --mode=dev",
+    "test": "./node_modules/.bin/mocha --compilers js:babel-core/register --colors -w ./test/*.spec.js"
+  }
 }
