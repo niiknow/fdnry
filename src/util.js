@@ -1,24 +1,64 @@
 // import gmodal from 'bower/gmodal/gmodal.js';
 import Promise from 'bower/es6-promise/dist/es6-promise.js';
+import keys from 'npm/lodash/keys.js';
+import extend from 'npm/lodash/extend.js';
+import each from 'npm/lodash/each.js';
+import map from 'npm/lodash/map.js';
+import throttle from 'npm/lodash/throttle.js';
+import dom from 'bower/dom/dom.js';
+import domready from 'bower/domready/ready.js';
+
+// allow for IE compatible object property delete
+let del = (obj, key) => {
+  obj[key] = null;
+  try {
+    delete obj[key];
+  } catch (e) {
+    let items = {};
+
+    each(obj, (v, k) => {
+      if (k !== key) {
+        items[k] = v;
+      }
+    });
+
+    return items;
+  }
+  return obj;
+};
 
 export default class Util {
-  constructor() {}
+  constructor() {
+    this.each = this.forEach = each;
+    this.map = this.collect = map;
+    this.keys = keys;
+    this.del = del;
+    this.extend = extend;
+    this.throttle = throttle;
+    this.dom = dom;
+    this.domready = domready;
+  }
 
-  each(obj, doIter) {
-    if (typeof (obj) === 'object') {
-      for (let k in obj) doIter(obj[k], k);
-      return;
+  parseQueryString(qstr) {
+    qstr = (qstr || '').replace('?', '').replace('#', '');
+    let d = decodeURIComponent;
+    let query = {};
+    let a = qstr.split('&');
+
+    for (let i = 0; i < a.length; i++) {
+      let b = a[i].split('=');
+
+      query[d(b[0])] = d(b[1] || '');
     }
-
-    for (let i = 0; i < obj.length; i++) doIter(obj[i], i);
+    return query;
   }
 
   /**
-   * make xhr request
+   * make xhr request with a promise
    * @param  {object} opts the options
    * @return {promise}     a promise
    */
-  request(opts) {
+  xhrp(opts) {
     let that = this;
 
     return new Promise((resolve, reject) => {
@@ -89,6 +129,7 @@ export default class Util {
     };
 
     req.send(options.data || void 0);
+    return req;
   }
 }
 

@@ -3,6 +3,8 @@
   "version": "0.0.2",
   "dependencies": {
     "gmodal": "https://github.com/niiknow/gmodal.git#1.0.0",
-    "es6-promise": "https://github.com/stefanpenner/es6-promise.git#3.2.2"
+    "es6-promise": "https://github.com/stefanpenner/es6-promise.git#3.2.2",
+    "dom": "https://github.com/component/dom.git#1.0.6",
+    "domready": "https://github.com/niiknow/domready.git#v0.3.0"
   }
 }

@@ -1,6 +1,6 @@
-import $ from 'jquery';
 import Util from './util';
 
+require('styles/fdn.css');
 let util = new Util();
 
 export default class Feedinary {
@@ -9,35 +9,29 @@ export default class Feedinary {
       channel: 'homepage',
       url: 'http://localhost:3000/api/',
       header: '<div class="fdn-content">',
-      footer: require('styles/fdn.css'),
       emptyText: '<div class="fdn-content"><div class="fdn-desc"></div></div>'
     };
   }
 
   init(client, theme, channel, url) {
-    this.config.fdnedit = ((location || {}).search || '').indexOf('fdnedit') > -1;
+    this.config.qs = util.parseQueryString((location || {}).search || '');
     this.config.client = client || this.config.client;
     this.config.theme = theme || this.config.theme;
     this.config.channel = channel || this.config.channel;
     this.config.url = url || this.config.url;
     this.config.css = ``;
 
-    $('[data-fdn-name]').addClass('fdn-container');
-    this.injectStyles('fdn');
+    util.dom('[id^="fdn-"]').addClass('fdn-container');
+    if (this.config.qs.fdnmode === 'edit') {
+      let myDom = util.dom('.fdn-container:empty');
 
-    if (this.config.fdnedit) {
-      $('.fdn-container:empty').html(this.config.emptyText);
-    }
-  }
-
-  injectStyles(id, rule) {
-    let rulez = rule || this.config.css;
-    let elId = `stylez_${id}`;
-
-    if ($(elId).length <= 0) {
-      let $div = `<div id="${elId}"><style>${rulez}</style></div>`;
-
-      $($div).appendTo('body');
+      myDom.html(this.config.emptyText);
+      util.dom('.fdn-desc').addClass('fdn-edit');
+      myDom.on('click', (evt) => {
+        // open edit modal
+      });
+    } else if (this.config.qs.fdnmode === 'preview') {
+      util.dom('.fdn-desc').addClass('fdn-preview');
     }
   }
 
@@ -46,6 +40,7 @@ export default class Feedinary {
     opts.data.client = this.opts.client;
     opts.data.type = 'content';
     opts.data.channel = this.opts.channel;
+
     if (this.config.theme) {
       opts.data.theme = opts.data.theme || this.config.theme;
     }
@@ -61,7 +56,7 @@ export default class Feedinary {
     let myName = name.toLowerCase();
 
     // find the destination element, quit if not found
-    let el = $(`[data-fdn-name='${myName}']`);
+    let el = util.dom(`[id='fdn-${myName}']`);
 
     if (el.length < 0) {
       return;
@@ -94,6 +89,7 @@ export default class Feedinary {
         html = html.replace('[[nc]]', new Date().getTime());
         html = html.replace('[[name]]', myName);
       }
+
       el.html('').html(html || '');
     }
 
