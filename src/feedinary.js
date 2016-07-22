@@ -1,10 +1,13 @@
 import Util from './util';
 
+require('bower/gmodal/gmodal.js');
 require('styles/fdn.css');
+let myContent = require('./html/editor.html');
 let util = new Util();
 
 export default class Feedinary {
   constructor() {
+    this.win = window;
     this.config = {
       channel: 'homepage',
       url: 'http://localhost:3000/api/',
@@ -20,6 +23,7 @@ export default class Feedinary {
     this.config.channel = channel || this.config.channel;
     this.config.url = url || this.config.url;
     this.config.css = ``;
+    let that = this;
 
     util.dom('[id^="fdn-"]').addClass('fdn-container');
     if (this.config.qs.fdnmode === 'edit') {
@@ -29,6 +33,7 @@ export default class Feedinary {
       util.dom('.fdn-desc').addClass('fdn-edit');
       myDom.on('click', (evt) => {
         // open edit modal
+        that.win.gmodal.show({content: myContent, hideOn: 'click,esc,tap'});
       });
     } else if (this.config.qs.fdnmode === 'preview') {
       util.dom('.fdn-desc').addClass('fdn-preview');

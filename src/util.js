@@ -54,34 +54,6 @@ export default class Util {
     return query;
   }
 
-  createiFrame(parentEl, content) {
-    let iframe = this.doc.createElement('iframe');
-
-    iframe.className = 'fdn-iframe';
-    iframe.frameBorder = '0';
-    iframe.marginWidth = '0';
-    iframe.marginHeight = '0';
-    iframe.scrolling = 'no';
-    iframe.setAttribute('border', '0');
-    iframe.setAttribute('allowtransparency', 'true');
-    iframe.width = '100%';
-    iframe.height = '100%';
-    parentEl.appendChild(iframe);
-
-    if (iframe.contentWindow) {
-      iframe.contentWindow.contents = content;
-      iframe.src = 'javascript:window["contents"]';
-      return iframe;
-    }
-
-    let doc = iframe.contentDocument || iframe.document;
-
-    doc.open();
-    doc.write(content);
-    doc.close();
-    return iframe;
-  }
-
   /**
    * make xhr request with a promise
    * @param  {object} opts the options
