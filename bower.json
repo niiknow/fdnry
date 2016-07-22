@@ -1,0 +1,8 @@
+{
+  "name": "fdn",
+  "version": "0.0.2",
+  "dependencies": {
+    "gmodal": "https://github.com/niiknow/gmodal.git#1.0.0",
+    "es6-promise": "https://github.com/stefanpenner/es6-promise.git#3.2.2"
+  }
+}

@@ -1,13 +1,15 @@
 import $ from 'jquery';
 import Util from './util';
 
+let util = new Util();
+
 export default class Feedinary {
   constructor() {
     this.config = {
       channel: 'homepage',
       url: 'http://localhost:3000/api/',
       header: '<div class="fdn-content">',
-      footer: '',
+      footer: require('styles/fdn.css'),
       emptyText: '<div class="fdn-content"><div class="fdn-desc"></div></div>'
     };
   }
@@ -18,39 +20,7 @@ export default class Feedinary {
     this.config.theme = theme || this.config.theme;
     this.config.channel = channel || this.config.channel;
     this.config.url = url || this.config.url;
-    this.config.css = `.fdn-content {
-  position: relative;
-}
-.fdn-desc:empty:not(focus):before {
-  content: "[[empty]]";
-  color: #ccc;
-}
-.fdn-desc:hover {
-  cursor: pointer;
-  border: 2px dashed #ccc;
-}
-.fdn-desc:hover:after {
-  content: "tap/click to edit...";
-  padding: 4px 8px;
-  color: #000;
-  position: absolute;
-  left: 0;
-  top: -30px;
-  z-index: 20;
-  white-space: nowrap;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border-radius: 5px;
-  -moz-box-shadow: 0px 0px 4px #222;
-  -webkit-box-shadow: 0px 0px 4px #222;
-  box-shadow: 0px 0px 4px #222;
-  background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
-  background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #eeeeee),color-stop(1, #cccccc));
-  background-image: -webkit-linear-gradient(top, #eeeeee, #cccccc);
-  background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
-  background-image: -ms-linear-gradient(top, #eeeeee, #cccccc);
-  background-image: -o-linear-gradient(top, #eeeeee, #cccccc);
-}`;
+    this.config.css = ``;
 
     $('[data-fdn-name]').addClass('fdn-container');
     this.injectStyles('fdn');
@@ -110,22 +80,20 @@ export default class Feedinary {
       let pi = (content.pi || '').split(',');
 
       // build impression pixel tracking
-      $.each(pi, (k, v) => {
+      util.each(pi, (v, k) => {
         if (v.length > 5) {
-          let vs = v;
-
-          if (v.indexOf('[[') > 0) {
-            vs = vs.replace('[[client]]', that.config.client);
-            vs = vs.replace('[[channel]]', that.config.channel);
-            vs = vs.replace('[[nc]]', new Date().getTime());
-            vs = vs.replace('[[name]]', myName);
-          }
-
-          html += `<img class="fdn-pi" width="1" height="1" border="0" src="${vs}" />`;
+          html += `<img class="fdn-pi" width="1" height="1" border="0" src="${v}" />`;
         }
       });
 
       html += `<div class="fdn-desc">${content.desc}</div>${that.config.footer}</div>`;
+
+      if (html.indexOf('[[') > 0) {
+        html = html.replace('[[client]]', that.config.client);
+        html = html.replace('[[channel]]', that.config.channel);
+        html = html.replace('[[nc]]', new Date().getTime());
+        html = html.replace('[[name]]', myName);
+      }
       el.html('').html(html || '');
     }
 

@@ -5,7 +5,8 @@ var env = require('yargs').argv.mode;
 
 var libraryName = 'fdn';
 
-var plugins = [], outputFile;
+var plugins = [],
+  outputFile;
 
 if (env === 'build') {
   plugins.push(new UglifyJsPlugin({ minimize: true }));
@@ -13,6 +14,18 @@ if (env === 'build') {
 } else {
   outputFile = libraryName + '.js';
 }
+
+plugins.push(new webpack.ResolverPlugin(
+  new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(
+    'bower.json', ['main'])
+));
+
+/*
+plugins.push(new HtmlWebpackPlugin({
+  pkg: require('./package.json'),
+  template: 'app/entry-template.html',
+}));
+*/
 
 var config = {
   entry: __dirname + '/src/index.js',
@@ -26,15 +39,16 @@ var config = {
   },
   module: {
     loaders: [
-      {
+      { test: /\.css$/, loader: 'style!css' },
+      { test: /\.html$/, loader: "html" },
+      { test: /\.json$/, loader: "json" }, {
         test: /(\.jsx|\.js)$/,
         loader: 'babel',
         exclude: /(node_modules|bower_components)/
-      },
-      {
+      }, {
         test: /(\.jsx|\.js)$/,
         loader: "eslint-loader",
-        exclude: /node_modules/
+        exclude: /(node_modules|bower_components)/
       }
     ]
   },
@@ -44,10 +58,15 @@ var config = {
     "jquery": "jQuery"
   },
   resolve: {
-    root: path.resolve('./src'),
-    extensions: ['', '.js']
+    modulesDirectories: ['node_modules', 'bower_components'],
+    alias: {
+      npm: __dirname + '/node_modules',
+      bower: __dirname + '/bower_components',
+      styles: __dirname + '/src/styles'
+    }
   },
   plugins: plugins
 };
 
 module.exports = config;
+
