@@ -1,6 +1,6 @@
 {
   "name": "fdn",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Feedinary client-side code",
   "main": "lib/fdn.js",
   "devDependencies": {

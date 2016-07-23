@@ -2,6 +2,7 @@ var webpack = require('webpack');
 var UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
 var path = require('path');
 var env = require('yargs').argv.mode;
+var pkg = require('./package.json');
 
 var libraryName = 'fdn';
 
@@ -15,10 +16,18 @@ if (env === 'build') {
   outputFile = libraryName + '.js';
 }
 
+var banner = [
+  ` ${pkg.name} v${pkg.version}`,
+  ` ${pkg.description}`,
+  ` Build ${new Date()}`
+].join('\n');
+
 plugins.push(new webpack.ResolverPlugin(
   new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(
     'bower.json', ['main'])
 ));
+
+plugins.push(new webpack.BannerPlugin(banner));
 
 /*
 plugins.push(new HtmlWebpackPlugin({

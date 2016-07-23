@@ -5,6 +5,9 @@ require('styles/fdn.css');
 let util = new Util();
 let debug = util.getDebug('fdn:main');
 
+/**
+ * main app
+ */
 export default class Feedinary {
   constructor() {
     this.win = window;
@@ -16,23 +19,44 @@ export default class Feedinary {
     };
   }
 
+  /**
+   * initialize this object
+   * @param  {string} client  the client id or name
+   * @param  {string} theme   default channel
+   * @param  {string} channel name for content channel
+   * @param  {string} url     Feedinary api url
+   * @return {object}         fdn
+   */
   init(client, theme, channel, url) {
-    this.config.qs = util.parseQueryString((location || {}).search || '');
     this.config.client = client || this.config.client;
     this.config.theme = theme || this.config.theme;
     this.config.channel = channel || this.config.channel;
     this.config.url = url || this.config.url;
+    this.util = util;
 
     debug('init');
     util.dom('[id^="fdn_"]').addClass('fdn-container');
-    if (this.config.qs.fdnmode === 'edit') {
+    if (util.search.fdnmode === 'edit') {
       this.editor = new FeedinaryEdit(this);
-    } else if (this.config.qs.fdnmode === 'preview') {
+    } else if (util.search.fdnmode === 'preview') {
       debug('entered preview mode');
       util.dom('.fdn-desc').addClass('fdn-preview');
     }
+
+    return this;
   }
 
+  /**
+   * make xhr request for data
+   * {
+   *   data: 'object: the data object',
+   *   url: 'string: default(null) - the url to get the data'
+   * }
+   *
+   * alternatively, use util.request for any custom request
+   * @param  {object} opts the option
+   * @return {object}      the xhr promise
+   */
   fetchContent(opts) {
     opts.url = opts.url || this.opts.url;
     opts.data = opts.data || {};
@@ -48,14 +72,22 @@ export default class Feedinary {
     return util.request(opts);
   }
 
-  getContent(name, item) {
-    let that = this;
-    let rst = {};
+  /**
+   * get the compiled content of an item
+   * @param  {string} name the id or name
+   * @return {object}      item and it's html
+   */
+  getContent(name) {
+    let that = this, item, rst = {};
 
     name = util.slugify(name).replace('fdn_', '');
 
     // get the content
-    item = item || (this.cache || {})[name];
+    item = (this.cache || {})[name];
+    if (!item) {
+      debug(`failed getContent for item ${name}`);
+      return rst;
+    }
 
     // build the header
     let html = `${that.config.header}`;
@@ -100,7 +132,12 @@ export default class Feedinary {
     return rst;
   }
 
-  renderItem(name, item) {
+  /**
+   * render or refresh specific item
+   * @param  {string} name the id or name
+   * @return {object}      render stat
+   */
+  renderItem(name) {
     let cancel = false;
     let rst = {
       rendered: 0,
@@ -113,18 +150,18 @@ export default class Feedinary {
     let el = util.dom(`[id='fdn_${name}']`);
 
     if (el.length < 0) return rst;
-    if (this.onBeforeRender) cancel = this.onBeforeRender(name, item);
+    if (this.onBeforeRender) cancel = this.onBeforeRender(name);
 
     if (!cancel) {
       // get the item
-      let item = this.getContent(name, item);
+      let item = this.getContent(name);
 
       el.html('').html(item.html || '');
       if (item.iframe) {
         let descEl = el.find('.fdn-desc');
 
         debug('rendering iframe for item ' + name);
-        util.createiFrame(descEl, item.desc);
+        util.loadiFrame(descEl, util.createiFrame(null, 'fdn-iframe'), item.desc);
       }
       rst.rendered++;
 
@@ -138,11 +175,15 @@ export default class Feedinary {
     return rst;
   }
 
+  /**
+   * render/refresh all
+   * @return {object} fdn
+   */
   renderAll() {
     let that = this;
 
     util.each(this.cache, (v, k) => {
-      that.renderItem(k, v);
+      that.renderItem(k);
     });
 
     return that;
@@ -150,7 +191,7 @@ export default class Feedinary {
 
   /**
    * process all cache data url
-   * @return {promise} when all cache data are completed
+   * @return {promise} when all data are completed
    */
   processCache() {
     let that = this;
@@ -158,8 +199,10 @@ export default class Feedinary {
 
     that.cacheData = {};
     util.each(that.cache, (v, k) => {
-      if (v.dataurl) {
-        let p = util.request({ url: v.dataurl });
+      let dataurl = v.dataurl + '';
+
+      if (dataurl.length > 20) {
+        let p = util.request({ url: dataurl });
 
         p.then((rsp) => {
           let text = rsp.text;
@@ -176,7 +219,7 @@ export default class Feedinary {
   /**
    * render specific content by name
    * @param  {string} name content name resolve by id=fdn_name
-   * @return {object}      self
+   * @return {object}      fdn
    */
   render(name) {
     let that = this;

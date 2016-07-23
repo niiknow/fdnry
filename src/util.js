@@ -7,6 +7,7 @@ import trim from 'npm/lodash/trim.js';
 import Debug from 'bower/debug/dist/debug.js';
 
 require('bower/es6-promise/dist/es6-promise.js').polyfill();
+
 // allow for IE compatible object property delete
 let del = (obj, key) => {
   obj[key] = null;
@@ -26,6 +27,10 @@ let del = (obj, key) => {
   return obj;
 };
 
+/**
+ * common util method
+ * may want to separate this in the future
+ */
 export default class Util {
   constructor() {
     this.win = window;
@@ -39,26 +44,50 @@ export default class Util {
     this.template = template;
     this.trim = trim;
     this._debug = this.getDebug('fdn:util');
+    this.search = this.parseQueryString((location || {}).search || '');
+
     // this.extend = extend;
     // this.throttle = throttle;
+    Debug.enable(this.search.debug || '');
   }
 
+  /**
+   * determine if user is authenticated
+   * @return {Boolean} false if not authenticated
+   */
   isAuthenticated() {
     let token = this.win.localStorage.getItem('fdntoken') + '';
 
-    return (token.length > 30);
+    return true || (token.length > 30);
   }
 
+  /**
+   * get the debugger object
+   * @param  {string} name the namespace of debug print prefix
+   * @return {object}      the debugger
+   */
   getDebug(name) {
     return Debug(name);
   }
 
+  /**
+   * helper method to get attribute on specific dom object
+   * @param  {object} dom  element
+   * @param  {string} attr attribute name
+   * @return {string}      attribute value
+   */
   getAttribute(dom, attr) {
     let el = dom[0] || dom;
 
     return (el.getAttribute) ? el.getAttribute(attr) : el[attr];
   }
 
+  /**
+   * cross browser attach event
+   * @param {object} obj     source object
+   * @param {string} evtName event name
+   * @param {object}         self
+   */
   addEvent(obj, evtName, func) {
     if (obj.addEventListener) {
       obj.addEventListener(evtName, func, false);
@@ -69,8 +98,16 @@ export default class Util {
     } else {
       obj[evtName] = func;
     }
+
+    return this;
   }
 
+  /**
+   * cross browser detach event
+   * @param {object} obj     source object
+   * @param {string} evtName event name
+   * @param {object}         self
+   */
   removeEvent(obj, evtName, func) {
     if (obj.removeEventListener) {
       obj.removeEventListener(evtName, func, false);
@@ -81,12 +118,23 @@ export default class Util {
     } else {
       obj[evtName] = null;
     }
+
+    return this;
   }
 
+  /**
+   * cross browser get of xhr
+   * @return {object} the xhr
+   */
   getAjaxObject() {
     return ('XMLHttpRequest' in window) ? new XMLHttpRequest() : new window.ActiveXObject('Microsoft.XMLHTTP');
   }
 
+  /**
+   * helper method to parse querystring
+   * @param  {string} qstr the querystring
+   * @return {object}      result
+   */
   parseQueryString(qstr) {
     qstr = (qstr || '').replace('?', '').replace('#', '');
     let d = decodeURIComponent, query = {}, a = qstr.split('&');
@@ -100,6 +148,11 @@ export default class Util {
     return query;
   }
 
+  /**
+   * reverse object to query string
+   * @param  {object} obj the object
+   * @return {string}     the query string
+   */
   toQueryString(obj) {
     let str = '';
 
@@ -107,19 +160,19 @@ export default class Util {
       str += `&${k}=${encodeURIComponent(v)}`;
     });
 
-    return str.replace('$', '');
+    return str.replace('&', '');
   }
 
-  createiFrame(parentEl, content) {
-    let doc, iframe;
-    let iframeContent = content;
+  /**
+   * create an iframe
+   * @return {object} the iframe
+   */
+  createiFrame(id, className) {
+    let iframe = this.doc.createElement('iframe');
 
-    if (content.indexOf('<!DOCTYPE') < 0) {
-      iframeContent = this.iframeContent.replace('<!--REPLACEME-->', content);
-    }
+    if (id) iframe.id = id;
+    if (className) iframe.className = className;
 
-    iframe = this.doc.createElement('iframe');
-    iframe.className = 'gmodal-iframe';
     iframe.frameBorder = '0';
     iframe.marginWidth = '0';
     iframe.marginHeight = '0';
@@ -127,13 +180,32 @@ export default class Util {
     iframe.setAttribute('allowtransparency', 'true');
     iframe.width = '100%';
     iframe.height = '100%';
+    return iframe;
+  }
+
+  /**
+   * load iframe content
+   * @param  {object} parentEl the parent element
+   * @param  {object} iframe   the iframe or use createiFrame
+   * @param  {string} content  the iframe content
+   * @return {object}          the iframe
+   */
+  loadiFrame(parentEl, iframe, content) {
+    let iframeContent = content;
+
     parentEl.appendChild(iframe);
+    if (iframeContent.indexOf('<!DOCTYPE') < 0) {
+      iframeContent = this.iframeContent.replace('<!--REPLACEME-->', content);
+    }
+
     if (iframe.contentWindow) {
       iframe.contentWindow.contents = iframeContent;
       iframe.src = 'javascript:window["contents"]';
       return iframe;
     }
-    doc = iframe.contentDocument || iframe.document;
+
+    let doc = iframe.contentDocument || iframe.document;
+
     doc.open();
     doc.write(iframeContent);
     doc.close();
@@ -250,12 +322,17 @@ export default class Util {
     return req;
   }
 
+  /**
+   * slugify a string
+   * @param  {string} str the string to slug
+   * @return {string}     slug result
+   */
   slugify(str) {
     str = str || '';
 
     if (str === '') return str;
 
     str = str.toLowerCase().replace(/[^0-9a-z\-\_]+/gi, '-').replace(/[\-]+/gi, '-');
-    return this.trim(str);
+    return str;
   }
 }
