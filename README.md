@@ -44,9 +44,31 @@ ES6 source files
 * `npm run dev` - produces development version of your library and runs a watcher
 * `npm run test` - well ... it runs the tests :)
 
-## Misc
+## Logic
 
-### An example of using dependencies that shouldn’t be resolved by webpack, but should become dependencies of the resulting bundle
+### Rendering
+* when rendering UI, get production content
+* when preview, get saved content
+* when edit, get saved content
 
-In the following example we are excluding React and Lodash:
+### Preview
+* add query string: fdnmode=preview
+* saved content and rendered, must completely reload page
+
+### Edit
+* add query string: fdnmode=edit
+* saved content are rendered and edit
+* all edits are handled by editor.html
+* user must be authenticated with the server in order to be in edit mode
+* redirect user to authenticate?
+
+### editor.html
+* auto-save are done through timer for dirty object
+* restore are asked when user edit and provided content is not the same
+* when edit
+  1.  apply default content if no item (new item)
+  2.  cancel to revert to content that was passed in
+  3.  save to persist to server
+  4.  publish to persist to server and publish content
+
 
