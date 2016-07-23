@@ -11,8 +11,8 @@ export default class Feedinary {
     this.config = {
       channel: 'homepage',
       url: 'http://localhost:3000/api/',
-      header: '<div class="fdn-content">',
-      emptyText: '<div class="fdn-content"><div class="fdn-desc"></div></div>'
+      header: '',
+      emptyText: '<div class="fdn-desc"></div>'
     };
   }
 
@@ -25,22 +25,39 @@ export default class Feedinary {
     this.config.css = ``;
     let that = this;
 
-    util.dom('[id^="fdn-"]').addClass('fdn-container');
+    util.dom('[id^="fdn_"]').addClass('fdn-container');
     if (this.config.qs.fdnmode === 'edit') {
       let myDom = util.dom('.fdn-container:empty');
 
       myDom.html(this.config.emptyText);
       util.dom('.fdn-desc').addClass('fdn-edit');
-      myDom.on('click', (evt) => {
+      util.dom('[id^="fdn_"] > .fdn-desc').on('click', (evt) => {
+        evt = evt || that.win.event;
+        let tg = evt.target || evt.srcElement;
+
+        if (tg.nodeType === 3) {
+          tg = tg.parentNode;
+        }
+        let el = util.dom(tg);
+
+        while (!el.hasClass('fdn-container')) {
+          el = util.dom(el[0].parentNode);
+        }
+
+        // figure out what item this is
+        let itemId = (el[0].id || '').replace('fdn_', '');
+
         // open edit modal
-        that.win.gmodal.show({content: myContent, hideOn: 'click,esc,tap'});
+        if (itemId) {
+          that.editItem(itemId);
+        }
       });
     } else if (this.config.qs.fdnmode === 'preview') {
       util.dom('.fdn-desc').addClass('fdn-preview');
     }
   }
 
-  getContent(opts) {
+  fetchContent(opts) {
     opts.url = opts.url || this.opts.url;
     opts.data.client = this.opts.client;
     opts.data.type = 'content';
@@ -55,52 +72,87 @@ export default class Feedinary {
     return ut.request(opts);
   }
 
-  renderContent(name, content) {
+  getContent(name, item) {
     let that = this;
+    let rst = {};
+
+    // get the content
+    item = item || (this.cache || {})[name];
+
+    // build the header
+    let html = `${that.config.header}`;
+    let pi = (item.pi || '').split(',');
+
+    // build impression pixel tracking
+    util.each(pi, (v, k) => {
+      if (v.length > 5) {
+        html += `<img class="fdn-pi" width="1" height="1" border="0" src="${v}" />`;
+      }
+    });
+
+    if (item.desc.indexOf('</script>') > 0 || (item.meta || {}).iframe) {
+      // auto iframe
+      html += `<div class="fdn-desc"></div>${that.config.footer}`;
+      rst.iframe = true;
+    } else {
+      html += `<div class="fdn-desc">${item.desc}</div>${that.config.footer}`;
+    }
+
+    if (html.indexOf('[[') > 0) {
+      html = html.replace('[[client]]', that.config.client);
+      html = html.replace('[[channel]]', that.config.channel);
+      html = html.replace('[[nc]]', new Date().getTime());
+      html = html.replace('[[name]]', name);
+    }
+
+    rst.html = html;
+    rst.item = item;
+
+    return rst;
+  }
+
+  editItem(name, item) {
+    let that = this;
+
+    // get the content
+    item = item || (this.cache || {})[name] || { desc: '' };
+
+    this.edit = { name: name, item: item };
+
+    // open edit modal
+    that.win.gmodal.show({ content: myContent, hideOn: 'click,esc,tap' });
+  }
+
+  renderItem(name, item) {
     let cancel = false;
     let myName = name.toLowerCase();
 
     // find the destination element, quit if not found
-    let el = util.dom(`[id='fdn-${myName}']`);
+    let el = util.dom(`[id='fdn_${myName}']`);
 
     if (el.length < 0) {
       return;
     }
 
     if (this.onBeforeRender) {
-      cancel = this.onBeforeRender(myName, content);
+      cancel = this.onBeforeRender(myName, item);
     }
 
     if (!cancel) {
-      // get the content
-      content = content || (this.cache || {})[myName];
+      // get the item
+      let item = this.getContent(name, item);
 
-      // build the header
-      let html = `${that.config.header}`;
-      let pi = (content.pi || '').split(',');
+      el.html('').html(item.html || '');
+      if (item.iframe) {
+        let descEl = el.find('.fdn-desc');
 
-      // build impression pixel tracking
-      util.each(pi, (v, k) => {
-        if (v.length > 5) {
-          html += `<img class="fdn-pi" width="1" height="1" border="0" src="${v}" />`;
-        }
-      });
-
-      html += `<div class="fdn-desc">${content.desc}</div>${that.config.footer}</div>`;
-
-      if (html.indexOf('[[') > 0) {
-        html = html.replace('[[client]]', that.config.client);
-        html = html.replace('[[channel]]', that.config.channel);
-        html = html.replace('[[nc]]', new Date().getTime());
-        html = html.replace('[[name]]', myName);
+        util.createiFrame(descEl, item.desc);
       }
-
-      el.html('').html(html || '');
     }
 
     // trigger on after render
     if (this.onAfterRender) {
-      this.onAfterRender(myName, content);
+      this.onAfterRender(myName, item);
     }
   }
 
@@ -108,7 +160,7 @@ export default class Feedinary {
     let that = this;
 
     if (!that.cache) {
-      that.getContent({
+      that.fetchContent({
         data: { channel: that.config.channel }
       }).then((data) => {
         if (typeof (data) === 'undefined') {
@@ -120,21 +172,21 @@ export default class Feedinary {
           that.cache = data;
         }
         if (name) {
-          that.renderContent(name);
+          that.rednerItem(name);
         } else {
           // loop through and render content
           for (let k in that.cache) {
-            that.renderContent(k);
+            that.rednerItem(k);
           }
         }
       });
     } else {
       if (name) {
-        that.renderContent(name);
+        that.rednerItem(name);
       } else {
         // loop through and render content
         for (let k in that.cache) {
-          that.renderContent(k);
+          that.rednerItem(k);
         }
       }
     }

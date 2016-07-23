@@ -13,13 +13,17 @@
 
 <body>
   <h1>fdn examples</h1>
-  <div id="fdn-block1" style="float: left;">
-    <div class="fdn-content">
-      <div class="fdn-desc">testxxx</div>
-    </div>
+  <div id="fdn_block1">
+    <div class="fdn-desc">testxxx</div>
   </div>
-  <div id="fdn-block2">test2</div>
-  <div id="fdn-block3"></div>
+  <div id="fdn_block2">test2</div>
+  <div id="fdn_block3"></div>
+  <script>
+    window.fdn.cache = {
+      'block1': { desc: 'textyyy'},
+      'block3': { desc: 'this is a test'}
+    };
+  </script>
 </body>
 
 </html>
