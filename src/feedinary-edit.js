@@ -18,7 +18,13 @@ export default class FeedinaryEdit {
     let myDom = util.dom('.fdn-container:empty');
     myDom.html(fdn.config.emptyText);
     util.dom('.fdn-desc').addClass('fdn-edit');
-    util.dom('[id^="fdn_"] > .fdn-desc').on('click', (evt) => {
+    util.dom('.fdn-desc').toolbar({
+      content: '#toolbar-options',
+      position: 'left',
+      adjustment: 35
+    });
+
+    util.dom('[id^="fdn_"] > .fdn-desc').on('dblclick', (evt) => {
       evt = evt || util.win.event;
       let tg = evt.target || evt.srcElement;
       if (tg.nodeType === 3) {

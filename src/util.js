@@ -1,6 +1,7 @@
 // import gmodal from 'bower/gmodal/gmodal.js';
 import domready from 'bower/domready/ready.js';
 import jQuery from 'jquery';
+import toolbar from 'bower/toolbar/jquery.toolbar.js';
 require('bower/es6-promise/dist/es6-promise.js').polyfill();
 // allow for IE compatible object property delete
 let del = (obj, key) => {
@@ -29,6 +30,7 @@ export default class Util {
     this.del = del;
     this.dom = jQuery;
     this.domready = domready;
+    this.toolbar = toolbar;
     this.doc = document || {};
     this.iframeContent = require('./html/iframe.html');
     this.trim = jQuery.trim;
@@ -193,7 +195,7 @@ export default class Util {
         opts.url += (opts.url.indexOf('?') > 0 ? '?' : '&') + that.toQueryString(opts.data);
         this.del(opts, 'data');
       }
-    } else if (typeof(opts.data) !== 'string') {
+    } else if (typeof (opts.data) !== 'string') {
       // handle non-string content body
       if ((opts.headers['Content-Type'] + '').indexOf('json') > 0) {
         opts.data = JSON.stringify(opts);

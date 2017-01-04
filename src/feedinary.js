@@ -1,6 +1,7 @@
 import Util from './util';
 import FeedinaryEdit from './feedinary-edit.js';
 require('styles/fdn.css');
+require('bower/toolbar/jquery.toolbar.css');
 let util = new Util();
 /**
  * main app
