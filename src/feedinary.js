@@ -1,10 +1,7 @@
 import Util from './util';
 import FeedinaryEdit from './feedinary-edit.js';
-
 require('styles/fdn.css');
 let util = new Util();
-let debug = util.getDebug('fdn:main');
-
 /**
  * main app
  */
@@ -33,16 +30,15 @@ export default class Feedinary {
     this.config.channel = channel || this.config.channel;
     this.config.url = url || this.config.url;
     this.util = util;
-
-    debug('init');
+    this.config.review = false;
     util.dom('[id^="fdn_"]').addClass('fdn-container');
     if (util.search.fdnmode === 'edit') {
+      this.config.review = true;
       this.editor = new FeedinaryEdit(this);
     } else if (util.search.fdnmode === 'preview') {
-      debug('entered preview mode');
+      this.config.review = true;
       util.dom('.fdn-desc').addClass('fdn-preview');
     }
-
     return this;
   }
 
@@ -63,12 +59,11 @@ export default class Feedinary {
     opts.data.client = this.opts.client;
     opts.data.type = 'content';
     opts.data.channel = this.opts.channel;
+    opts.data.review = this.config.review;
     opts.method = opts.method || 'GET';
-
     if (this.config.theme) {
       opts.data.theme = opts.data.theme || this.config.theme;
     }
-
     return util.request(opts);
   }
 
@@ -78,31 +73,24 @@ export default class Feedinary {
    * @return {object}      item and it's html
    */
   getContent(name) {
-    let that = this, item, rst = {};
-
+    let that = this,
+      item, rst = {};
     name = util.slugify(name).replace('fdn_', '');
-
     // get the content
     item = (this.cache || {})[name];
     if (!item) {
-      debug(`failed getContent for item ${name}`);
       return rst;
     }
-
     // build the header
     let html = `${that.config.header}`;
     let pi = (item.pi || '');
-
     pi = (pi.indexOf(']') > 0) ? JSON.parse(pi) : [pi];
-
     // build impression pixel tracking
     util.each(pi, (v, k) => {
       if (v.length > 5) {
-        debug(`composing pi ${v}`);
         html += `<img class="fdn-pi" width="1" height="1" border="0" src="${v}" />`;
       }
     });
-
     if (item.desc.indexOf('</script>') > 0 || (item.meta || {}).iframe) {
       // auto iframe
       html += `<div class="fdn-desc"></div>${that.config.footer}`;
@@ -110,10 +98,8 @@ export default class Feedinary {
     } else {
       html += `<div class="fdn-desc">${item.desc}</div>${that.config.footer}`;
     }
-
     // string macro handling - possibly use lodash template?
     if (html.indexOf('<%=') > -1) {
-      debug(`compiling template`);
       let obj = {
         client: this.config.client,
         channel: this.config.channel,
@@ -122,13 +108,10 @@ export default class Feedinary {
         item: item
       };
       let compiled = util.template(html);
-
       html = compiled(obj);
     }
-
     rst.html = html;
     rst.item = item;
-
     return rst;
   }
 
@@ -143,35 +126,25 @@ export default class Feedinary {
       rendered: 0,
       canceled: 0
     };
-
     name = util.slugify(name).replace('fdn_', '');
-
     // find the destination element, quit if not found
     let el = util.dom(`[id='fdn_${name}']`);
-
     if (el.length < 0) return rst;
     if (this.onBeforeRender) cancel = this.onBeforeRender(name);
-
     if (!cancel) {
       // get the item
       let item = this.getContent(name);
-
       el.html('').html(item.html || '');
       if (item.iframe) {
         let descEl = el.find('.fdn-desc');
-
-        debug('rendering iframe for item ' + name);
         util.loadiFrame(descEl, util.createiFrame(null, 'fdn-iframe'), item.desc);
       }
       rst.rendered++;
-
       // trigger on after render
       if (this.onAfterRender) this.onAfterRender(name, item);
     } else {
-      debug('rendering canceled for item ' + name);
       rst.canceled++;
     }
-
     return rst;
   }
 
@@ -181,11 +154,9 @@ export default class Feedinary {
    */
   renderAll() {
     let that = this;
-
     util.each(this.cache, (v, k) => {
       that.renderItem(k);
     });
-
     return that;
   }
 
@@ -196,23 +167,20 @@ export default class Feedinary {
   processCache() {
     let that = this;
     let promisses = [];
-
     that.cacheData = {};
     util.each(that.cache, (v, k) => {
       let dataurl = v.dataurl + '';
-
       if (dataurl.length > 20) {
-        let p = util.request({ url: dataurl });
-
+        let p = util.request({
+          url: dataurl
+        });
         p.then((rsp) => {
           let text = rsp.text;
-
           that.cacheData[k] = (text.indexOf('}') > 0 || text.indexOf(']') > 0) ? JSON.parse(text) : text;
         });
         promisses.push(p);
       }
     });
-
     return Promise.all(promisses);
   }
 
@@ -223,13 +191,12 @@ export default class Feedinary {
    */
   render(name) {
     let that = this;
-
     name = util.slugify(name).replace('fdn_', '');
-
     if (!that.cache) {
-      debug('fetching content');
       that.fetchContent({
-        data: { channel: that.config.channel }
+        data: {
+          channel: that.config.channel
+        }
       }).then((rsp) => {
         that.cache = JSON.parse(rsp.text);
         that.processCache().then(() => {
@@ -240,18 +207,15 @@ export default class Feedinary {
           }
         });
       }, () => {
-        debug('error getting data');
         that.cache = {};
       });
     } else {
-      debug('rendering from cache');
       if (name) {
         that.rednerItem(name);
       } else {
         that.renderAll();
       }
     }
-
     return that;
   }
 }

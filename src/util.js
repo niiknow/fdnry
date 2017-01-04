@@ -1,13 +1,7 @@
 // import gmodal from 'bower/gmodal/gmodal.js';
-import each from 'npm/lodash/each.js';
-import dom from 'bower/dom/dom.js';
 import domready from 'bower/domready/ready.js';
-import template from 'npm/lodash/template.js';
-import trim from 'npm/lodash/trim.js';
-import Debug from 'bower/debug/dist/debug.js';
-
+import jQuery from 'jquery';
 require('bower/es6-promise/dist/es6-promise.js').polyfill();
-
 // allow for IE compatible object property delete
 let del = (obj, key) => {
   obj[key] = null;
@@ -15,18 +9,15 @@ let del = (obj, key) => {
     delete obj[key];
   } catch (e) {
     let items = {};
-
-    each(obj, (v, k) => {
+    jQuery.each(obj, (v, k) => {
       if (k !== key) {
         items[k] = v;
       }
     });
-
     return items;
   }
   return obj;
 };
-
 /**
  * common util method
  * may want to separate this in the future
@@ -34,21 +25,16 @@ let del = (obj, key) => {
 export default class Util {
   constructor() {
     this.win = window;
-    this.each = this.forEach = each;
+    this.each = this.forEach = jQuery.each;
     this.del = del;
-    this.dom = dom;
+    this.dom = jQuery;
     this.domready = domready;
     this.doc = document || {};
     this.iframeContent = require('./html/iframe.html');
-
-    this.template = template;
-    this.trim = trim;
-    this._debug = this.getDebug('fdn:util');
+    this.trim = jQuery.trim;
     this.search = this.parseQueryString((location || {}).search || '');
-
     // this.extend = extend;
     // this.throttle = throttle;
-    Debug.enable(this.search.debug || '');
   }
 
   /**
@@ -57,17 +43,15 @@ export default class Util {
    */
   isAuthenticated() {
     let token = this.win.localStorage.getItem('fdntoken') + '';
-
-    return true || (token.length > 30);
-  }
-
-  /**
-   * get the debugger object
-   * @param  {string} name the namespace of debug print prefix
-   * @return {object}      the debugger
-   */
-  getDebug(name) {
-    return Debug(name);
+    // validate the token
+    let tparts = token.split('.');
+    if (tparts.length < 2) return false;
+    let objString = this.win.btoa(tparts[1]);
+    let obj = JSON.parse(objString);
+    let exp = parseFloat(obj.exp) * 1000;
+    let today = new Date().getTime();
+    // valid token has not expired
+    return today > exp;
   }
 
   /**
@@ -78,7 +62,6 @@ export default class Util {
    */
   getAttribute(dom, attr) {
     let el = dom[0] || dom;
-
     return (el.getAttribute) ? el.getAttribute(attr) : el[attr];
   }
 
@@ -98,7 +81,6 @@ export default class Util {
     } else {
       obj[evtName] = func;
     }
-
     return this;
   }
 
@@ -118,7 +100,6 @@ export default class Util {
     } else {
       obj[evtName] = null;
     }
-
     return this;
   }
 
@@ -137,14 +118,13 @@ export default class Util {
    */
   parseQueryString(qstr) {
     qstr = (qstr || '').replace('?', '').replace('#', '');
-    let d = decodeURIComponent, query = {}, a = qstr.split('&');
-
+    let d = decodeURIComponent,
+      query = {},
+      a = qstr.split('&');
     for (let i = 0; i < a.length; i++) {
       let b = a[i].split('=');
-
       query[d(b[0])] = d(b[1] || '');
     }
-
     return query;
   }
 
@@ -155,11 +135,9 @@ export default class Util {
    */
   toQueryString(obj) {
     let str = '';
-
     this.each(obj, (v, k) => {
       str += `&${k}=${encodeURIComponent(v)}`;
     });
-
     return str.replace('&', '');
   }
 
@@ -169,10 +147,8 @@ export default class Util {
    */
   createiFrame(id, className) {
     let iframe = this.doc.createElement('iframe');
-
     if (id) iframe.id = id;
     if (className) iframe.className = className;
-
     iframe.frameBorder = '0';
     iframe.marginWidth = '0';
     iframe.marginHeight = '0';
@@ -192,20 +168,16 @@ export default class Util {
    */
   loadiFrame(parentEl, iframe, content) {
     let iframeContent = content;
-
     parentEl.appendChild(iframe);
     if (iframeContent.indexOf('<!DOCTYPE') < 0) {
       iframeContent = this.iframeContent.replace('<!--REPLACEME-->', content);
     }
-
     if (iframe.contentWindow) {
       iframe.contentWindow.contents = iframeContent;
       iframe.src = 'javascript:window["contents"]';
       return iframe;
     }
-
     let doc = iframe.contentDocument || iframe.document;
-
     doc.open();
     doc.write(iframeContent);
     doc.close();
@@ -214,16 +186,14 @@ export default class Util {
 
   request(opts) {
     let that = this;
-
     opts.headers = opts.headers || {};
-
     if (['HEAD', 'GET', 'DELETE'].indexOf(opts.method) > -1) {
       // convert data to query string
       if (opts.data) {
         opts.url += (opts.url.indexOf('?') > 0 ? '?' : '&') + that.toQueryString(opts.data);
         this.del(opts, 'data');
       }
-    } else if (typeof (opts.data) !== 'string') {
+    } else if (typeof(opts.data) !== 'string') {
       // handle non-string content body
       if ((opts.headers['Content-Type'] + '').indexOf('json') > 0) {
         opts.data = JSON.stringify(opts);
@@ -232,7 +202,6 @@ export default class Util {
         opts.data = that.toQueryString(opts);
       }
     }
-
     return that.xhrp(opts);
   }
 
@@ -243,7 +212,6 @@ export default class Util {
    */
   xhrp(opts) {
     let that = this;
-
     return new Promise((resolve, reject) => {
       return that.xhr(opts, resolve, reject);
     });
@@ -257,40 +225,34 @@ export default class Util {
    */
   xhr(options, callback, errback) {
     let url = options;
-
     if (typeof url === 'string') {
       options = options || {};
       options.url = url;
     }
-
     // Create the XHR request itself
     let req = this.getAjaxObject();
-
     if (options.withCredentials) {
       req.withCredentials = true;
-
       if (typeof XDomainRequest !== 'undefined') {
         // XDomainRequest for IE.
         req = new XDomainRequest();
       }
     }
-
     // if there are no options, it failed
     if (!options || options.length === 0) {
-      errback({ xhr: req, error: new Error('xhr expects an url or an options object, none given.') });
+      errback({
+        xhr: req,
+        error: new Error('xhr expects an url or an options object, none given.')
+      });
     }
-
     // normalize method
     options.method = options.method || 'GET';
-
     // open url
     req.open(options.method, options.url, req.withCredentials);
-
     // set request header
     this.each(options.headers || {}, (value, key) => {
       req.setRequestHeader(key, value);
     });
-
     this.addEvent(req, 'readystatechange', () => {
       if (req.readyState === 4 && (req.status >= 200 && req.status < 400)) {
         // Callbacks for successful requests
@@ -305,20 +267,19 @@ export default class Util {
           xhr: req
         });
       }
-
       // ignore everything else?
     });
-
     this.addEvent(req, 'error', (err) => {
-      errback({ xhr: req, error: err });
+      errback({
+        xhr: req,
+        error: err
+      });
     });
-
     // send unless prevent by options
     // such as user want to handle file upload
     if (!options.nosend) {
       req.send(options.data || void 0);
     }
-
     return req;
   }
 
@@ -329,9 +290,7 @@ export default class Util {
    */
   slugify(str) {
     str = str || '';
-
     if (str === '') return str;
-
     str = str.toLowerCase().replace(/[^0-9a-z\-\_]+/gi, '-').replace(/[\-]+/gi, '-');
     return str;
   }

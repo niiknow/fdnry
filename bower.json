@@ -6,7 +6,6 @@
     "es6-promise": "https://github.com/stefanpenner/es6-promise.git#3.2.2",
     "dom": "https://github.com/component/dom.git#1.0.6",
     "domready": "https://github.com/niiknow/domready.git#v0.3.0",
-    "debug": "https://github.com/visionmedia/debug.git#2.2.0",
     "load-script-once": "https://github.com/segmentio/load-script-once.git#0.0.3"
   }
 }

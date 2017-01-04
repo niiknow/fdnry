@@ -10,6 +10,7 @@
 .fdn-edit:empty:not(focus):before {
   content: "--[empty]--";
   color: #ccc;
+  min-height: 50px;
 }
 
 .fdn-edit:hover {
